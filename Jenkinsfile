@@ -1,49 +1,83 @@
-
+    // stage('Checkout') {
+    //   steps {
+    //     git branch: 'main', credentialsId: 'GitlabCred', url: 'https://github.com/Ahmedlekan/springboot-pipeline.git'
+    //   }
+    // }
 pipeline {
   agent { label 'build' }
+
+  tools {
+    maven "MVN3.9"
+    jdk "JDK17"
+  }
+
    environment { 
-        registry = "adamtravis/democicd" 
-        registryCredential = 'dockerhub' 
+        registry = "ahmedlekan/democicd" 
+        registryCredential = 'dockerhub'
+
+        scannerHome = tool 'Sonar7.1'   
+        version = "1.0"                
+        projectName = "javaspringboot"     
    }
 
   stages {
+
     stage('Checkout') {
       steps {
-        git branch: 'main', credentialsId: 'GitlabCred', url: 'https://gitlab.com/learndevopseasy/devsecops/springboot-build-pipeline.git'
+        git branch: 'main', url: 'https://github.com/Ahmedlekan/springboot-pipeline.git'
       }
     }
   
    stage('Stage I: Build') {
       steps {
         echo "Building Jar Component ..."
-        sh "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64; mvn clean package "
+        sh "mvn install -DskipTests"
+      }
+      post{
+        success{
+          echo "Archiving Artifact"
+          archiveArtifacts artifacts: '**/*.war'
+        }
       }
     }
 
-   stage('Stage II: Code Coverage ') {
+    stage('Stage II:Unit Test') {
+        steps {
+            sh 'mvn test'
+        }
+    }
+
+   stage('Stage III: Code Coverage ') {
       steps {
 	    echo "Running Code Coverage ..."
-        sh "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64; mvn jacoco:report"
+        sh "mvn jacoco:report"
       }
     }
 
-   stage('Stage III: SCA') {
+   stage('Stage IV: SCA') {
       steps { 
         echo "Running Software Composition Analysis using OWASP Dependency-Check ..."
-        sh "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64; mvn org.owasp:dependency-check-maven:check"
+        sh "mvn org.owasp:dependency-check-maven:check"
       }
     }
 
-   stage('Stage IV: SAST') {
-      steps { 
-        echo "Running Static application security testing using SonarQube Scanner ..."
-        withSonarQubeEnv('mysonarqube') {
-            sh 'mvn sonar:sonar -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml -Dsonar.dependencyCheck.jsonReportPath=target/dependency-check-report.json -Dsonar.dependencyCheck.htmlReportPath=target/dependency-check-report.html -Dsonar.projectName=wezvatech'
-       }
-      }
-    }
+    stage('Stage V: SAST') {
+            steps {
+                withSonarQubeEnv('sonarserver') {
+                    sh """${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=${projectName} \
+                        -Dsonar.projectName=${projectName} \
+                        -Dsonar.projectVersion=${version} \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/site/jacoco/jacoco.xml \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml"""
+                }
+            }
+        }
 
-   stage('Stage V: QualityGates') {
+   stage('Stage VI: QualityGates') {
       steps { 
         echo "Running Quality Gates to verify the code quality"
         script {
@@ -57,7 +91,7 @@ pipeline {
       }
     }
    
-   stage('Stage VI: Build Image') {
+   stage('Stage VII: Build Image') {
       steps { 
         echo "Build Docker Image"
         script {
@@ -69,17 +103,17 @@ pipeline {
       }
     }
         
-   stage('Stage VII: Scan Image ') {
+   stage('Stage VIII: Scan Image ') {
       steps { 
         echo "Scanning Image for Vulnerabilities"
-        sh "trivy image --scanners vuln --offline-scan adamtravis/democicd:latest > trivyresults.txt"
+        sh "trivy image --scanners vuln --offline-scan ${registry}:latest > trivyresults.txt"
         }
     }
           
-   stage('Stage VIII: Smoke Test ') {
+   stage('Stage IX: Smoke Test ') {
       steps { 
         echo "Smoke Test the Image"
-        sh "docker run -d --name smokerun -p 8080:8080 adamtravis/democicd"
+        sh "docker run -d --name smokerun -p 8080:8080 ${registry}"
         sh "sleep 90; ./check.sh"
         sh "docker rm --force smokerun"
         }
@@ -87,3 +121,4 @@ pipeline {
 
   }
 }
+
