@@ -3,6 +3,7 @@
     //     git branch: 'main', credentialsId: 'GitlabCred', url: 'https://github.com/Ahmedlekan/springboot-pipeline.git'
     //   }
     // }
+
 pipeline {
   agent { label 'build' }
 
@@ -115,6 +116,8 @@ pipeline {
         echo "Smoke Test the Image"
         sh "docker run -d --name smokerun -p 8080:8080 ${registry}"
         sh "sleep 90; ./check.sh"
+        sh "chmod +x check.sh"
+        sh "./check.sh"
         sh "docker rm --force smokerun"
         }
     }
