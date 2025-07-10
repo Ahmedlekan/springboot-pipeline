@@ -55,9 +55,9 @@ pipeline {
       }
     }
 
-   stage('Stage IV: SCA') {
+   stage('Stage IV: SCA (Software Composition Analysis)') {
       steps { 
-        echo "Running Software Composition Analysis using OWASP Dependency-Check ..."
+        echo "Running SCA with OWASP Dependency-Check..."
         sh "mvn org.owasp:dependency-check-maven:check"
       }
     }
@@ -91,37 +91,51 @@ pipeline {
         }
       }
     }
-   
-   stage('Stage VII: Build Image') {
-      steps { 
-        echo "Build Docker Image"
+
+    stage('Build Docker Image') {
+      steps {
+        echo "Building Docker Image..."
         script {
-               docker.withRegistry( '', registryCredential ) { 
-                 myImage = docker.build(registry, '-f Docker-files/app/Dockerfile .')
-                 myImage.push()
-                }
+          dockerImage = docker.build(registry, '-f Docker-files/app/Dockerfile .')
+        }
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        script {
+          docker.withRegistry('', registryCredential) {
+            dockerImage.push()
+          }
         }
       }
     }
         
-   stage('Stage VIII: Scan Image ') {
+   stage('Stage IX: Scan Image ') {
       steps { 
         echo "Scanning Image for Vulnerabilities"
         sh "trivy image --scanners vuln --offline-scan ${registry}:latest > trivyresults.txt"
         }
     }
           
-   stage('Stage IX: Smoke Test ') {
+   stage('Stage X: Smoke Test ') {
       steps { 
         echo "Smoke Test the Image"
-        sh "docker run -d --name smokerun -p 8080:8080 ${registry}"
+        sh "docker run -d --name smokerun -p 8081:8080 ${registry}"
         sh "sleep 90"
         sh "chmod +x check.sh"
         sh "./check.sh"
         sh "docker rm --force smokerun"
         }
     }
+  }
 
+  post {
+    always {
+      echo "Performing Cleanup..."
+      sh "docker rm -f smokerun || true"
+      sh "docker image prune -f"
+    }
   }
 }
 
