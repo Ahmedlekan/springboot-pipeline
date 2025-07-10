@@ -5,7 +5,7 @@
     // }
 
 pipeline {
-  agent { label 'build' }
+  agent any
 
   tools {
     maven "MVN3.9"
