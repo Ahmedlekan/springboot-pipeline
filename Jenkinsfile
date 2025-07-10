@@ -25,7 +25,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/Ahmedlekan/springboot-pipeline.git'
+        git branch: 'main', credentialsId: 'git-credentials', url: 'https://github.com/Ahmedlekan/springboot-pipeline.git'
       }
     }
   
