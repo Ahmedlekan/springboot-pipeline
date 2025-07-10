@@ -28,15 +28,15 @@ pipeline {
       }
     }
   
-   stage('Stage I: Build') {
+   stage('Stage I: Build WAR') {
       steps {
         echo "Building Jar Component ..."
-        sh "mvn install -DskipTests"
+        sh "mvn clean package -DskipTests"
       }
       post{
         success{
           echo "Archiving Artifact"
-          archiveArtifacts artifacts: '**/*.war'
+          archiveArtifacts artifacts: 'target/*.war'
         }
       }
     }
@@ -96,7 +96,7 @@ pipeline {
         echo "Build Docker Image"
         script {
                docker.withRegistry( '', registryCredential ) { 
-                 myImage = docker.build registry
+                 myImage = docker.build(registry, '-f Docker-files/app/Dockerfile .')
                  myImage.push()
                 }
         }
