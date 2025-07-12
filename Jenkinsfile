@@ -226,7 +226,7 @@ pipeline {
       steps {
         echo "Building ECR App Image..."
         script {
-          dockerImage = docker.build(registry, + ":BUILD_NUMBER", "./Docker-files/app/Dockerfile .")
+          dockerImage = docker.build("${registry}:${env.BUILD_NUMBER}", "-f Docker-files/app/Dockerfile .")
         }
       }
     }
