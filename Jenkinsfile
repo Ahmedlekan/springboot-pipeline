@@ -234,7 +234,7 @@ pipeline {
     stage("Stage VIII: Upload App Image"){
         steps{
             script{
-                docker.withRegistry(springbootRegistry, registryCredential){
+                docker.withRegistry(registryCredential, springbootRegistry){
                     dockerImage.push("$BUILD_NUMBER")
                     dockerImage.push("latest")
                 }
