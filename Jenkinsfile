@@ -161,13 +161,14 @@ pipeline {
   
    stage('Stage I: Build WAR') {
       steps {
-        echo "Building Jar Component ..."
+        echo "Building WAR Component ..."
         sh "mvn clean package -DskipTests"
+        sh "ls -l target/" 
       }
       post{
         success{
           echo "Archiving Artifact"
-          archiveArtifacts artifacts: 'target/*.war'
+          archiveArtifacts artifacts: 'target/javaspringboot-v2.war'
         }
       }
     }
