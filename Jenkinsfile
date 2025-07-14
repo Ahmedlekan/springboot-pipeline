@@ -168,7 +168,7 @@ pipeline {
       post{
         success{
           echo "Archiving Artifact"
-          archiveArtifacts artifacts: 'target/javaspringboot-v2.war'
+          archiveArtifacts artifacts: '**/*.war'
         }
       }
     }
