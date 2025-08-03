@@ -2,15 +2,31 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 WORKDIR /app
-COPY . .
-RUN mvn clean package -DskipTests
+COPY pom.xml .
+COPY src ./src
 
-# Stage 2: Tomcat + deploy WAR
-# FROM tomcat:10.1.20-jdk17-temurin
+# Build with cache for dependencies
+RUN mvn -B dependency:go-offline
+RUN mvn -B clean package -DskipTests
+
+# Stage 2: Tomcat + deploy artifact (Final runtime Image)
+# ----------------------
 FROM tomcat:9.0.85-jre11
 
-RUN rm -rf /usr/local/tomcat/webapps/*
-COPY --from=builder /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
+RUN rm -rf /usr/local/tomcat/webapps/docs \
+    /usr/local/tomcat/webapps/examples \
+    /usr/local/tomcat/webapps/manager \
+
+# Non-root user setup
+RUN useradd -u 1001 -M -d /usr/local/tomcat tomcat && \
+    chown -R tomcat:tomcat /usr/local/tomcat
+USER tomcat
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+COPY --from=builder --chown=tomcat:tomcat /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
 
 EXPOSE 8080
 CMD ["catalina.sh", "run"]
