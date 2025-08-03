@@ -7,6 +7,7 @@ pipeline {
   }
 
    environment { 
+         ODC_SERVER = 'http://3.86.243.88:8080'
         springbootRegistry = "ecr:us-east-1:awscredentials";
         registry = "314146307160.dkr.ecr.us-east-1.amazonaws.com/springbootregistry";
         registryCredential = "https://314146307160.dkr.ecr.us-east-1.amazonaws.com";
@@ -52,9 +53,12 @@ pipeline {
     }
 
    stage('Stage IV: SCA (Software Composition Analysis)') {
-      steps { 
-        echo "Running SCA with OWASP Dependency-Check..."
-        sh "mvn org.owasp:dependency-check-maven:check"
+      steps {
+        sh """
+        mvn org.owasp:dependency-check-maven:check \
+          -Dodc.server.url=${ODC_SERVER} \
+          -Dodc.skip.update=true
+        """
       }
     }
 
