@@ -6,7 +6,8 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Stage 2: Tomcat + deploy WAR
-FROM tomcat:10.1.20-jdk17-temurin
+# FROM tomcat:10.1.20-jdk17-temurin
+FROM tomcat:9.0.85-jre11
 
 RUN rm -rf /usr/local/tomcat/webapps/*
 COPY --from=builder /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
@@ -53,8 +54,3 @@ CMD ["catalina.sh", "run"]
 
 # # Start Tomcat when container runs
 # CMD ["catalina.sh", "run"]
-
-
-
-
-
