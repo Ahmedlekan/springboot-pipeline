@@ -63,20 +63,23 @@ pipeline {
   //   }
 
     stage('Stage V: SAST') {
-            steps {
-                withSonarQubeEnv('sonarserver') {
-                    sh """${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=${projectName} \
-                        -Dsonar.projectName=${projectName} \
-                        -Dsonar.projectVersion=${version} \
-                        -Dsonar.sources=src/ \
-                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                        -Dsonar.jacoco.reportsPath=target/site/jacoco/jacoco.xml \
-                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml"""
-                }
-            }
-        }
+      steps {
+          withSonarQubeEnv('sonarserver') {
+              sh"""
+              export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+              ${scannerHome}/bin/sonar-scanner \
+                  -Dsonar.projectKey=${projectName} \
+                  -Dsonar.projectName=${projectName} \
+                  -Dsonar.projectVersion=${version} \
+                  -Dsonar.sources=src/ \
+                  -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                  -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                  -Dsonar.jacoco.reportsPath=target/site/jacoco/jacoco.xml \
+                  -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+            """
+          }
+      }
+    }
 
    stage('Stage VI: QualityGates') {
       steps { 
