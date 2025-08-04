@@ -13,7 +13,7 @@ FROM tomcat:9.0.85-jre11
 RUN rm -rf /usr/local/tomcat/webapps/*
 
 # Copy only the final WAR from builder (no source code, no Maven, no Git)
-COPY --from=builder /app/Springboot-Pipeline/target/*javaspringboot-v2.war /usr/local/tomcat/webapps/ROOT.war
+COPY --from=builder /app/target/*javaspringboot-v2.war /usr/local/tomcat/webapps/ROOT.war
 
 # Clean additional Tomcat docs/example apps
 RUN rm -rf /usr/local/tomcat/webapps/docs \
