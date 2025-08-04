@@ -2,17 +2,20 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-
-# Build with cache for dependencies
-RUN mvn -B dependency:go-offline
-RUN mvn -B clean package -DskipTests
+COPY . .
+RUN mvn clean package -DskipTests
 
 # Stage 2: Tomcat + deploy artifact (Final runtime Image)
 # ----------------------
 FROM tomcat:9.0.85-jre11
 
+# Remove default apps to keep image smaller
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+# Copy only the final WAR from builder (no source code, no Maven, no Git)
+COPY --from=builder /app/springboot-pipeline/target/*javaspringboot-v2.war /usr/local/tomcat/webapps/ROOT.war
+
+# Clean additional Tomcat docs/example apps
 RUN rm -rf /usr/local/tomcat/webapps/docs \
     /usr/local/tomcat/webapps/examples \
     /usr/local/tomcat/webapps/manager \
@@ -26,10 +29,11 @@ USER tomcat
 HEALTHCHECK --interval=30s --timeout=3s \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-COPY --from=builder --chown=tomcat:tomcat /app/target/*.war /usr/local/tomcat/webapps/ROOT.war
-
 EXPOSE 8080
 CMD ["catalina.sh", "run"]
+
+
+
 
 
 
