@@ -15,14 +15,13 @@ RUN rm -rf /usr/local/tomcat/webapps/*
 # Copy only the final WAR from builder (no source code, no Maven, no Git)
 COPY --from=builder /app/target/*javaspringboot-v2.war /usr/local/tomcat/webapps/ROOT.war
 
-# Clean additional Tomcat docs/example apps
+# Clean additional Tomcat docs/example apps and setup non-root user
 RUN rm -rf /usr/local/tomcat/webapps/docs \
     /usr/local/tomcat/webapps/examples \
-    /usr/local/tomcat/webapps/manager \
-
-# Non-root user setup
-RUN useradd -u 1001 -M -d /usr/local/tomcat tomcat && \
+    /usr/local/tomcat/webapps/manager && \
+    useradd -u 1001 -M -d /usr/local/tomcat tomcat && \
     chown -R tomcat:tomcat /usr/local/tomcat
+
 USER tomcat
 
 # Health check
