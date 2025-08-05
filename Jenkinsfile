@@ -105,10 +105,10 @@ pipeline {
     }
 
     stage('Stage VIII: Image Scan') {
-      steps {
-        sh 'docker scan --severity high ${registry}:${env.BUILD_NUMBER}'
-      }
+    steps {
+        sh "docker scan --severity high ${registry}:${BUILD_NUMBER}"
     }
+}
 
     stage("Stage IX: Upload App Image"){
         steps{
