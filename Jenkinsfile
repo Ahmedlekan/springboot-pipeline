@@ -7,7 +7,6 @@ pipeline {
   }
 
    environment { 
-        // ODC_SERVER = 'http://3.86.243.88:8080'
         springbootRegistry = "ecr:us-east-1:awscredentials";
         registry = "314146307160.dkr.ecr.us-east-1.amazonaws.com/springbootregistry";
         registryCredential = "https://314146307160.dkr.ecr.us-east-1.amazonaws.com";
@@ -52,15 +51,12 @@ pipeline {
       }
     }
 
-  //  stage('Stage IV: SCA (Software Composition Analysis)') {
-  //     steps {
-  //       sh """
-  //       mvn org.owasp:dependency-check-maven:check \
-  //         -Dodc.server.url=${ODC_SERVER} \
-  //         -Dodc.skip.update=true
-  //       """
-  //     }
-  //   }
+   stage('Stage IV: SCA (Software Composition Analysis)') {
+      steps {
+        echo "Running Software Composition Analysis using OWASP Dependency-Check ..."
+        sh "export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64; mvn org.owasp:dependency-check-maven:check"
+      }
+    }
 
     stage('Stage V: SAST') {
       steps {
@@ -104,13 +100,25 @@ pipeline {
       }
     }
 
-    stage('Stage VIII: Image Scan') {
-    steps {
-        sh "docker scan --severity high ${registry}:${BUILD_NUMBER}"
+    stage('Stage VIII: Scan Image') {
+      steps { 
+        echo "Scanning Image for Vulnerabilities"
+        sh "trivy image --scanners vuln --severity HIGH,CRITICAL ${registry}:${env.BUILD_NUMBER}"
+      }
     }
-}
 
-    stage("Stage IX: Upload App Image"){
+    stage('Stage IX: Smoke Test ') {
+       steps { 
+         echo "Smoke Test the Image"
+         sh "docker run -d --name smokerun -p 8081:8080 ${registry}:${env.BUILD_NUMBER}"
+         sh "sleep 90"
+         sh "chmod +x check.sh"
+         sh "./check.sh"
+         sh "docker rm --force smokerun"
+         }
+    }
+
+    stage("Stage X: Upload App Image"){
         steps{
             script{
                 docker.withRegistry(registryCredential, springbootRegistry){
@@ -131,7 +139,6 @@ pipeline {
   }
   
 }
-
 
 
 
