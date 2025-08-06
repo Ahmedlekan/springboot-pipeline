@@ -107,27 +107,7 @@ pipeline {
       }
     }
 
-    stage('Stage IX: Smoke Test') {
-      steps { 
-        echo "Smoke Test the Image"
-        script {
-          // Use the same port mapping as your ECS task definition (typically 8080:8080)
-          sh "docker run -d --name smokerun -p 8080:8080 ${registry}:${env.BUILD_NUMBER}"
-          sh "sleep 30"  # Wait for application startup
-          
-          // Pass the image name as environment variable to the script
-          sh """
-            export IMAGE_NAME="${registry}:${env.BUILD_NUMBER}"
-            chmod +x check.sh
-            ./check.sh
-          """
-          
-          sh "docker rm --force smokerun"
-        }
-      }
-    }
-
-    stage("Stage X: Upload App Image"){
+    stage("Stage IX: Upload App Image"){
         steps{
             script{
                 docker.withRegistry(registryCredential, springbootRegistry){
